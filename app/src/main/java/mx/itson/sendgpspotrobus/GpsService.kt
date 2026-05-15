@@ -14,6 +14,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
+import mx.itson.sendgpspotrobus.utils.Constants
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -26,7 +27,7 @@ class GpsService : Service() {
     private lateinit var prefs: SharedPreferences
     private val client = OkHttpClient()
     private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
-    private val BASE_URL = "http://192.168.68.56:5500"
+    private val BASE_URL = Constants.BASE_URL
 
     override fun onCreate() {
         super.onCreate()
@@ -75,8 +76,8 @@ class GpsService : Service() {
     }
 
     private fun requestLocationUpdates() {
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
-            .setMinUpdateIntervalMillis(10000)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000)
+            .setMinUpdateIntervalMillis(4000)
             .build()
 
         try {
@@ -108,8 +109,10 @@ class GpsService : Service() {
             }
         """.trimIndent()
 
+        val token = prefs.getString("jwt_token", "") ?: ""
         val request = Request.Builder()
             .url("$BASE_URL/api/gps/position")
+            .addHeader("Authorization", "Bearer $token")
             .post(json.toRequestBody(JSON_MEDIA))
             .build()
 
@@ -122,7 +125,11 @@ class GpsService : Service() {
                 if (response.isSuccessful) {
                     Log.d("GpsService", "GPS enviado — unidad $idUnidad " +
                             "${location.latitude}, ${location.longitude}")
-                } else {
+                } else if (response.code == 401) {
+                    Log.e("GpsService", "Token expirado — deteniendo servicio")
+                    prefs.edit().clear().apply()
+                    stopSelf()
+                }else {
                     Log.e("GpsService", "Error del servidor: ${response.code}")
                 }
                 response.close()

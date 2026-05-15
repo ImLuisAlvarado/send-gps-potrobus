@@ -9,13 +9,14 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import mx.itson.sendgpspotrobus.utils.Constants
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
+
 
 class LoginActivity : AppCompatActivity() {
 
@@ -28,7 +29,7 @@ class LoginActivity : AppCompatActivity() {
 
     private val client = OkHttpClient()
     private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
-    private val BASE_URL = "http://192.168.68.56:5500"
+    private val BASE_URL = Constants.BASE_URL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,10 +105,12 @@ class LoginActivity : AppCompatActivity() {
                             val numEco    = chofer.optString("numero_economico", "—")
 
                             // Guardar sesión
+                            val accessToken = json.getString("access_token")
                             prefs.edit()
                                 .putInt("id_unidad", idUnidad)
                                 .putString("nombre_chofer", nombre)
                                 .putString("numero_economico", numEco)
+                                .putString("jwt_token", accessToken)
                                 .apply()
 
                             goToMain()
